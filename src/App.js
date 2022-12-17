@@ -1,56 +1,62 @@
 import './App.css';
 
 import React, {useState, useReducer} from 'react'
+import Todo from './Todo.js';
 
 
 // Global- non-changing variables:
-const ACTIONS = {
-    INCREMENT: 'increment',
-    DECREMENT: 'decrement',
-    CLEAR: 'clear'
+export const ACTIONS = {
+    ADD_TODO: 'add-todo',
+    TOGGLE_TODO: 'toggle-todo',
+    DELETE_TODO: 'delete-todo',
 }
 
-function reducer(state, action) {
-  console.log("state", state)
-  console.log("action", action)
+function reducer(todos, action) {
   switch(action.type) {
-    case ACTIONS.INCREMENT:
-      return { count: state.count + 1 }
-    case ACTIONS.DECREMENT :
-      return { count: state.count -1 }
-    case ACTIONS.CLEAR :
-      return { count: 0 }
+    case ACTIONS.ADD_TODO:
+      return [...todos, newTodo(action.payload.name)]
+    case ACTIONS.TOGGLE_TODO:
+      return todos.map(todo => {
+        if (todo.id === action.payload.id) {
+          return {...todo, complete: !todo.complete}
+        }
+        return todo
+      })
+    case ACTIONS.DELETE_TODO:
+      return todos.filter(todo => {
+        return todo.id !== action.payload.id
+      })
     default:
-      return state
+      return [...todos];
   }
+}
+
+function newTodo(name) {
+  return { id: Date.now(), name: name, complete: false}
 }
 
 
 function App() {
-  
-  const [state, dispatch] = useReducer(reducer, {count: 0})
-  // Similar to useState:
-  // const [count, setCount] = useState(0)
+  // todos is gonna be an array instead of an object:
+  const [todos, dispatch] = useReducer(reducer, []);
+  const [name, setName] = useState('');
 
-  function increment () {
-    dispatch({type: 'increment'})
-  }
-
-  function decrement () {
-    state.count > 0 && dispatch({type: 'decrement'})
-  }
-
-  function clear () {
-    dispatch({type: 'clear'})
+  function handleSubmit(e) {
+    e.preventDefault();
+    dispatch({ type: ACTIONS.ADD_TODO, payload : {name: name}});
+    setName('');
   }
 
 
   return (
     <>
-    <button onClick={decrement}>-</button>
-    <span>{state.count}</span>
-    <button onClick={increment}>+</button>
-    <button onClick={clear}>CLEAR</button>
+      <form onSubmit={handleSubmit}>
+        <input type="text" value={name} onChange={ e => setName(e.target.value)} ></input>
+      </form>
+      {todos.map( todo => {
+        return <Todo key={todo.id} todo={todo} dispatch={dispatch} />
+      })}
+
     </>
   );
 }
